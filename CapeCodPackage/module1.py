@@ -197,6 +197,44 @@ def total_unpaid_claim_est(df,paid_claims_df,earned_premium,n):
 
     return new_df
 
+#Returns a df of dev triangle from csv file of 1000s of records
+def dev_triangle(df,feature):
+
+    if feature not in df.columns:
+        feature=feature.capitalize()
+
+    #Creating a dataframe that displays an empty development triangle
+    start=min(df['AccidentYear'])
+    end=max(df['AccidentYear'])
+    rows,cols=[],[]
+
+    count=1
+    for x in range(start,end+1):
+        # All the development years available in csv file will be saved in array rows
+        # Multiples of 12 saved in array cols
+        rows.append(x)
+        cols.append(12*count)
+        count+=1
+    
+    # Create an empty DataFrame with the specified column and row names
+    new_df = pd.DataFrame(columns=cols, index=rows)
+    
+    # Filling null values
+    mask = new_df.isna()
+    new_df[mask]=0
+    
+    no_of_rows=df.shape[0]
+    for x in range(no_of_rows):
+    #iterating through each row of the original dataframe
+        dev_year  = df.loc[x,'DevelopmentYear']
+        acc_year  = df.loc[x,'AccidentYear']
+        inc_amount= df.loc[x, feature]
+
+        year_diff = dev_year - acc_year
+
+        new_df.loc[acc_year, 12*(year_diff+1)]+=inc_amount
+
+    return new_df
 
 #df=reported_claims_df
 def cape_cod_summary(df,paid_claims_df,earned_premium,n=3):
