@@ -274,10 +274,12 @@ def cape_cod_summary(df,paid_claims_df,earned_premium,n=3, est_claim_ratio=0):
     
     ####    Calculating Expected Estimated Claim Ratio    ####
     #8 Appending Expected Estimated Claim Ratio into df
-    if est_claim_ratio!=None:
+
+    if est_claim_ratio==0:
         est_claim_ratio=exp_est_claim_ratio(df,earned_premium,n)
 
     exp_est_claim_ratio_arr= ["{:.1%}".format(est_claim_ratio)] * 10
+
     dfop['Expected Claim Ratio']=exp_est_claim_ratio_arr
 
     #9 Estimated Expected Claims
