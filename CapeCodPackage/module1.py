@@ -136,7 +136,7 @@ def percent_unreported(df,n=3):
     return new_df
 
 #Expected Unreported Claims = Est Expected Claims * %age Unreported
-def exp_unreported_claims(df,earned_premium,n, est_claim_ratio):
+def exp_unreported_claims(df,earned_premium,n, est_claim_ratio=0):
     exp_unreported_claims=[]
     arr1=[float(x[-1].rstrip('%'))/100 for x in percent_unreported(df,n).values]
     arr2=[x[-1] for x in est_exp_claims(df, earned_premium, n, est_claim_ratio).values]
@@ -186,8 +186,12 @@ def case_outstanding(df,paid_claims_df):
     return new_df
 
 #Total Unpaid Claim Estimate = Case Outstanding + IBNR 
-def total_unpaid_claim_est(df,paid_claims_df,earned_premium,n,est_claim_ratio):
+def total_unpaid_claim_est(df,paid_claims_df,earned_premium,n,est_claim_ratio=0):
     total_unpaid_claim_est=[]
+
+    if est_claim_ratio==0:
+        est_claim_ratio=exp_est_claim_ratio(df,earned_premium,n)
+
     arr1=case_outstanding(df,paid_claims_df).iloc[:,-1:].values
     arr2=exp_unreported_claims(df,earned_premium,n,est_claim_ratio).iloc[:,-1:].values
 
@@ -220,7 +224,7 @@ def dev_triangle(df,feature):
         cols.append(12*count)
         count+=1
     
-    # Create an empty dataframe with the specified column and row names
+    # Create an empty DataFrame with the specified column and row names
     new_df = pd.DataFrame(columns=cols, index=rows)
     
     # Filling null values
@@ -271,11 +275,9 @@ def cape_cod_summary(df,paid_claims_df,earned_premium,n=3, est_claim_ratio=0):
     ####    Calculating Expected Estimated Claim Ratio    ####
     #8 Appending Expected Estimated Claim Ratio into df
     if est_claim_ratio!=None:
-        x=est_claim_ratio
-    else:
-        x=exp_est_claim_ratio(df,earned_premium,n,est_claim_ratio)
+        est_claim_ratio=exp_est_claim_ratio(df,earned_premium,n)
 
-    exp_est_claim_ratio_arr= ["{:.1%}".format(x)] * 10
+    exp_est_claim_ratio_arr= ["{:.1%}".format(est_claim_ratio)] * 10
     dfop['Expected Claim Ratio']=exp_est_claim_ratio_arr
 
     #9 Estimated Expected Claims
