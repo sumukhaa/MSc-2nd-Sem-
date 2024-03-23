@@ -108,10 +108,14 @@ def exp_est_claim_ratio(df,earned_premium,n):
     return exp_est_claim_ratio
 
 #Estimated Expected Claims = Earned Premium * Expected est claim ratio
-def est_exp_claims(df,earned_premium,n):
+def est_exp_claims(df,earned_premium,n,est_claim_ratio=0):
     exp_est_claim_ratio_arr= ["{:.1%}".format(exp_est_claim_ratio(df,earned_premium,n))] * 10
 
-    ratio=exp_est_claim_ratio(df,earned_premium,n)
+    if est_claim_ratio!=None:
+        ratio=est_claim_ratio
+    else:
+        ratio=exp_est_claim_ratio(df,earned_premium,n)
+
     est_exp_claims_arr=[int(x*ratio) for x in earned_premium]
 
     new_df=pd.DataFrame(earned_premium, columns=['Earned Premium'])
@@ -132,10 +136,10 @@ def percent_unreported(df,n=3):
     return new_df
 
 #Expected Unreported Claims = Est Expected Claims * %age Unreported
-def exp_unreported_claims(df,earned_premium,n):
+def exp_unreported_claims(df,earned_premium,n, est_claim_ratio):
     exp_unreported_claims=[]
     arr1=[float(x[-1].rstrip('%'))/100 for x in percent_unreported(df,n).values]
-    arr2=[x[-1] for x in est_exp_claims(df, earned_premium, n).values]
+    arr2=[x[-1] for x in est_exp_claims(df, earned_premium, n, est_claim_ratio).values]
 
     #Multiplying corresponding elements of 2 arrays
     for x,y in zip(arr1, arr2):
@@ -149,10 +153,10 @@ def exp_unreported_claims(df,earned_premium,n):
     return new_df
 
 #Projected Ultimate Claims = Expected Unreported Claims + Reported Claims
-def proj_ult_claims(df,earned_premium,n):
+def proj_ult_claims(df,earned_premium,n,est_claim_ratio):
     proj_ult_claims=[]
     arr1=latest_diagonal(df).values
-    arr2=exp_unreported_claims(df,earned_premium,n).iloc[:,-1:].values
+    arr2=exp_unreported_claims(df,earned_premium,n,est_claim_ratio).iloc[:,-1:].values
 
     for x,y in zip(arr1,arr2):
         proj_ult_claims.append(int(x+y))
@@ -182,10 +186,10 @@ def case_outstanding(df,paid_claims_df):
     return new_df
 
 #Total Unpaid Claim Estimate = Case Outstanding + IBNR 
-def total_unpaid_claim_est(df,paid_claims_df,earned_premium,n):
+def total_unpaid_claim_est(df,paid_claims_df,earned_premium,n,est_claim_ratio):
     total_unpaid_claim_est=[]
     arr1=case_outstanding(df,paid_claims_df).iloc[:,-1:].values
-    arr2=exp_unreported_claims(df,earned_premium,n).iloc[:,-1:].values
+    arr2=exp_unreported_claims(df,earned_premium,n,est_claim_ratio).iloc[:,-1:].values
 
     for x,y in zip(arr1,arr2):
         total_unpaid_claim_est.append(int(x+y))
@@ -216,7 +220,7 @@ def dev_triangle(df,feature):
         cols.append(12*count)
         count+=1
     
-    # Create an empty DataFrame with the specified column and row names
+    # Create an empty dataframe with the specified column and row names
     new_df = pd.DataFrame(columns=cols, index=rows)
     
     # Filling null values
@@ -237,7 +241,7 @@ def dev_triangle(df,feature):
     return new_df
 
 #df=reported_claims_df
-def cape_cod_summary(df,paid_claims_df,earned_premium,n=3):
+def cape_cod_summary(df,paid_claims_df,earned_premium,n=3, est_claim_ratio=0):
     #0 Creating an empty Dataframe
     dfop=pd.DataFrame()
 
@@ -266,22 +270,27 @@ def cape_cod_summary(df,paid_claims_df,earned_premium,n=3):
     
     ####    Calculating Expected Estimated Claim Ratio    ####
     #8 Appending Expected Estimated Claim Ratio into df
-    exp_est_claim_ratio_arr= ["{:.1%}".format(exp_est_claim_ratio(df,earned_premium,n))] * 10
+    if est_claim_ratio!=None:
+        x=est_claim_ratio
+    else:
+        x=exp_est_claim_ratio(df,earned_premium,n,est_claim_ratio)
+
+    exp_est_claim_ratio_arr= ["{:.1%}".format(x)] * 10
     dfop['Expected Claim Ratio']=exp_est_claim_ratio_arr
 
     #9 Estimated Expected Claims
-    est_exp_claims_df=est_exp_claims(df,earned_premium,n).iloc[:,-1:] #fetch last col of the df
+    est_exp_claims_df=est_exp_claims(df,earned_premium,n,est_claim_ratio).iloc[:,-1:] #fetch last col of the df
     dfop=dfop.merge(est_exp_claims_df,left_index=True, right_index=True, how='inner')
 
     #10 Percentage of Unreported
     # dfop=dfop.merge(percent_unreported(df,n),left_index=True, right_index=True, how='inner')
 
     #11 Expected Unreported Claims (IBNR)
-    exp_unrep_claims_df=exp_unreported_claims(df,earned_premium,n).iloc[:,-1:] #fetch last col of the df
+    exp_unrep_claims_df=exp_unreported_claims(df,earned_premium,n,est_claim_ratio).iloc[:,-1:] #fetch last col of the df
     dfop=dfop.merge(exp_unrep_claims_df,left_index=True, right_index=True, how='inner')
 
     #12 Projected Ultimate Claims
-    proj_ult_claims_df=proj_ult_claims(df,earned_premium,n).iloc[:,-1:] #fetch last col of the df
+    proj_ult_claims_df=proj_ult_claims(df,earned_premium,n,est_claim_ratio).iloc[:,-1:] #fetch last col of the df
     dfop=dfop.merge(proj_ult_claims_df,left_index=True, right_index=True, how='inner')
 
     #13 Paid Claims
@@ -292,7 +301,7 @@ def cape_cod_summary(df,paid_claims_df,earned_premium,n=3):
     dfop=dfop.merge(case_outstanding_df,left_index=True, right_index=True, how='inner')
 
     #15 Total Unpaid Claim Estimate
-    total_unpaid_df=total_unpaid_claim_est(df,paid_claims_df,earned_premium,n).iloc[:,-1:] #fetch last col of the df
+    total_unpaid_df=total_unpaid_claim_est(df,paid_claims_df,earned_premium,n,est_claim_ratio).iloc[:,-1:] #fetch last col of the df
     dfop=dfop.merge(total_unpaid_df,left_index=True, right_index=True, how='inner')
 
     #16 Appending the Total Row
