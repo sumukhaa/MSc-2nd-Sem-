@@ -1,9 +1,5 @@
 #Q1) 
 
-
-
-
-
 # a) Finding correlation coefficient between X and Y
 
 dataset = read.csv("Q1.csv")
@@ -11,8 +7,6 @@ dataset = read.csv("Q1.csv")
 #Let r be correlation coefficient
 r <- cor(dataset$Months, dataset$Songs)
 r
-
-
 
 
 
